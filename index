@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body { margin: 0; background: #0f172a; color: white; font-family: sans-serif; text-align: center; }
+        #timer { height: 10px; background: #4ade80; width: 100%; position: fixed; top: 0; }
+        #card { margin: 50px auto; width: 85%; height: 70vh; background: white; border-radius: 30px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 8px solid #FFD700; color: #1e293b; }
+        img { max-width: 80%; max-height: 40%; border-radius: 15px; }
+        h1 { font-size: 50px; margin: 10px 0; }
+        p { font-size: 20px; color: #64748b; }
+        #end { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; justify-content: center; align-items: center; flex-direction: column; }
+    </style>
+</head>
+<body>
+    <div id="timer"></div>
+    <div id="card" onclick="next()">
+        <img id="g" src="https://media.giphy.com/media/v8857rM5N1Zsc/giphy.gif">
+        <h1 id="t">ช้าง</h1>
+        <p id="p">Chaang (Elephant)</p>
+    </div>
+    <div id="end"><h1>😴 ฝันดี</h1><p>Time for bed!</p></div>
+
+    <script>
+        const cards = [
+            {g:"https://media.giphy.com/media/v8857rM5N1Zsc/giphy.gif", t:"ช้าง", p:"Chaang"},
+            {g:"https://media.giphy.com/media/ICOgUNoHOvGtu/giphy.gif", t:"แมว", p:"Maew"},
+            {g:"https://media.giphy.com/media/q7776f8e754zC/giphy.gif", t:"นก", p:"Nok"},
+            {g:"https://media.giphy.com/media/kFfS62SsuK800/giphy.gif", t:"อาบน้ำ", p:"Arp-Nam"}
+        ];
+        let i = 0;
+        let time = 300; 
+
+        function speak(txt) {
+            window.speechSynthesis.cancel();
+            let u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'th-TH';
+            window.speechSynthesis.speak(u);
+        }
+
+        function next() {
+            speak(cards[i].t);
+            i = (i + 1) % cards.length;
+            setTimeout(() => {
+                document.getElementById('g').src = cards[i].g;
+                document.getElementById('t').innerText = cards[i].t;
+                document.getElementById('p').innerText = cards[i].p;
+            }, 1000);
+        }
+
+        setInterval(() => {
+            time--;
+            document.getElementById('timer').style.width = (time/300)*100 + "%";
+            if(time <= 0) document.getElementById('end').style.display = 'flex';
+        }, 1000);
+    </script>
+</body>
+</html>
