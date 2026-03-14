@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Thai Nightly Practice</title>
+    <style>
+        body { margin: 0; background: #111827; color: white; font-family: 'Segoe UI', sans-serif; text-align: center; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        .screen { display: none; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%; position: absolute; top: 0; left: 0; }
+        #start-screen { display: flex; z-index: 50; background: #111827; }
+        #app-screen { z-index: 10; padding-top: 15px; }
+        #end-screen { z-index: 100; background: #111827; }
+
+        #start-btn { padding: 20px 50px; font-size: 30px; border-radius: 50px; background: #f472b6; color: white; border: none; font-weight: bold; cursor: pointer; box-shadow: 0 10px 20px rgba(244, 114, 182, 0.4); }
+
+        /* 5-Section Pink Gradient Timer */
+        #timer-wrapper { position: fixed; top: 0; left: 0; width: 100%; height: 15px; background: #374151; z-index: 20; display: none; }
+        #timer-fill { height: 100%; width: 0%; background: linear-gradient(to right, #fbcfe8, #be185d); transition: width 1s linear; position: absolute; top: 0; left: 0; }
+        #timer-marks { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; }
+        .mark { flex: 1; border-right: 3px solid #111827; box-sizing: border-box; }
+        .mark:last-child { border-right: none; }
+
+        /* Flashcard */
+        #card { width: 85%; height: 60vh; background: #ffffff; border-radius: 40px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 8px solid #f472b6; color: #111827; padding: 20px; box-sizing: border-box; }
+        img { max-width: 90%; max-height: 40%; border-radius: 20px; object-fit: cover; margin-bottom: 10px; }
+        h1 { font-size: clamp(35px, 8vw, 55px); margin: 10px 0 5px 0; font-weight: 900; line-height: 1.2; }
+        p { font-size: 20px; color: #4b5563; margin: 0; font-weight: bold; }
+
+        /* Interactive Buttons */
+        #action-area { margin-top: 20px; height: 80px; display: flex; justify-content: center; align-items: center; }
+        .action-btn { padding: 15px 40px; font-size: 24px; border-radius: 40px; border: none; font-weight: bold; cursor: pointer; transition: all 0.2s; }
+        #listen-btn { background: #3b82f6; color: white; box-shadow: 0 5px 15px rgba(59, 130, 246, 0.4); display: none; }
+        #speak-btn { background: #10b981; color: white; box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4); animation: pulse 1.5s infinite; display: none; }
+        
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+    </style>
+</head>
+<body>
+
+    <div id="start-screen" class="screen">
+        <h1 style="color: white; margin-bottom: 40px;">Ready for Thai? 🇹🇭</h1>
+        <button id="start-btn" onclick="startGame()">Start 5 Minutes</button>
+    </div>
+
+    <div id="timer-wrapper">
+        <div id="timer-fill"></div>
+        <div id="timer-marks">
+            <div class="mark"></div><div class="mark"></div><div class="mark"></div><div class="mark"></div><div class="mark"></div>
+        </div>
+    </div>
+
+    <div id="app-screen" class="screen">
+        <div id="card">
+            <img id="pic" src="">
+            <h1 id="thai"></h1>
+            <p id="eng"></p>
+        </div>
+        <div id="action-area">
+            <button id="listen-btn" onclick="repeatAudio()">🔊 Listen Again</button>
+            <button id="speak-btn" onclick="userSpoke()">🎤 I Said It! (Next)</button>
+        </div>
+    </div>
+
+    <div id="end-screen" class="screen">
+        <div style="font-size: 80px; margin-bottom: 20px;">🌟</div>
+        <h1 style="color: #4ade80; font-size: 50px; margin: 0;">Good job!</h1>
+        <h1 style="color: #4ade80; font-size: 60px; margin: 0 0 30px 0;">เก่งมาก</h1>
+        <p style="color: #fbcfe8; font-size: 24px;">(Geng mak!)</p>
+        <div style="font-size: 50px; margin-top: 30px;">😴</div>
+        <p style="color: #9ca3af; font-size: 20px; margin-top: 10px;">Time for bed.</p>
+    </div>
+
+    <script>
+        const cards = [
+            {img:"https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?w=500&q=80", t:"ช้างตัวใหญ่", e:"Chaang dtua yai (Elephants are big)"},
+            {img:"https://images.unsplash.com/photo-1559291001-693fb9faa08d?w=500&q=80", t:"เครื่องบินบินสูง", e:"Kreuang-bin bin soong (The airplane flies so high)"},
+            {img:"https://images.unsplash.com/photo-1512466699320-94d3809cb9f8?w=500&q=80", t:"ผมอยากกิน", e:"Pom yaak gin (I want to eat)"},
+            {img:"https://images.unsplash.com/photo-1559598467-f8b76c8155d0?w=500&q=80", t:"ผมอยากอาบน้ำ", e:"Pom yaak aab-nam (I want to shower)"},
+            {img:"https://images.unsplash.com/photo-1523362628745-0c100150b504?w=500&q=80", t:"ผมอยากกินน้ำ", e:"Pom yaak gin nam (I want to drink water)"},
+            {img:"https://images.unsplash.com/photo-1563636619-e9143da7973b?w=500&q=80", t:"ผมอยากกินนม", e:"Pom yaak gin nom (I want to drink milk)"},
+            {img:"https://images.unsplash.com/photo-1541781143003-81b438ea0e85?w=500&q=80", t:"ผมง่วงนอน", e:"Pom nguang norn (I’m sleepy)"},
+            {img:"https://images.unsplash.com/photo-1517672651691-24622a91b550?w=500&q=80", t:"ไม่เอา", e:"Mai aow (I don’t want)"},
+            {img:"https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?w=500&q=80", t:"ห้ามตีเพื่อนนะ", e:"Haam dtee peuan na (We cannot hit our friends)"},
+            {img:"https://images.unsplash.com/photo-1516733968668-dbdce39c4651?w=500&q=80", t:"เราจะไปไหนกัน", e:"Rao ja bpai nai gan (Where are we going?)"},
+            {img:"https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=500&q=80", t:"ทำอะไรอยู่", e:"Tam a-rai yoo (What are you doing?)"},
+            {img:"https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=500&q=80", t:"ผมจะไปโรงเรียน", e:"Pom ja bpai rong-rian (I'm going to school)"}
+        ];
+        
+        let idx = 0;
+        const totalTime = 300; 
+        let timePassed = 0; 
+        let currentAudio = null;
+
+        function startGame() {
+            let unlockAudio = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(unlockAudio);
+
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('timer-wrapper').style.display = 'block';
+            document.getElementById('app-screen').style.display = 'flex';
+
+            loadCard(idx);
+
+            const tick = setInterval(() => {
+                timePassed++;
+                let pct = (timePassed / totalTime) * 100;
+                document.getElementById('timer-fill').style.width = pct + "%";
+                
+                if(timePassed >= totalTime) {
+                    clearInterval(tick);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        function speakWord(text) {
+            window.speechSynthesis.cancel();
+            document.getElementById('listen-btn').style.display = 'none';
+            document.getElementById('speak-btn').style.display = 'none';
+
+            let msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'th-TH';
+            msg.rate = 0.70; // Slightly slower for full sentences
+
+            msg.onend = function() {
+                // After app speaks, show the buttons for the child
+                document.getElementById('listen-btn').style.display = 'inline-block';
+                document.getElementById('speak-btn').style.display = 'inline-block';
+            };
+
+            window.speechSynthesis.speak(msg);
+            
+            // Fallback just in case onend doesn't fire on some mobile browsers
+            setTimeout(() => {
+                document.getElementById('listen-btn').style.display = 'inline-block';
+                document.getElementById('speak-btn').style.display = 'inline-block';
+            }, 2500);
+        }
+
+        function loadCard(index) {
+            document.getElementById('pic').src = cards[index].img;
+            document.getElementById('thai').innerText = cards[index].t;
+            document.getElementById('eng').innerText = cards[index].e;
+            speakWord(cards[index].t);
+        }
+
+        function repeatAudio() {
+            speakWord(cards[idx].t);
+        }
+
+        function userSpoke() {
+            // Move to next card
+            idx = (idx + 1) % cards.length;
+            loadCard(idx);
+        }
+
+        function endGame() {
+            document.getElementById('app-screen').style.display = 'none';
+            document.getElementById('timer-wrapper').style.display = 'none';
+            document.getElementById('end-screen').style.display = 'flex';
+            
+            let endMsg = new SpeechSynthesisUtterance("เก่งมาก ฝันดี");
+            endMsg.lang = 'th-TH';
+            window.speechSynthesis.speak(endMsg);
+        }
+    </script>
+</body>
+</html>
